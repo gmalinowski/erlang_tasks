@@ -1,0 +1,1 @@
+-record(lru, {cap, values = #{}, keys = []}).
