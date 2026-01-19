@@ -118,6 +118,16 @@ lru_cache_get_test_() ->
 
             ?assertEqual({ok, new_value, NewStateShouldBe}, lru:lru_cache_get(S1, 88))
         end},
+        {"get on single-element cache",
+        fun() ->
+            S = lru:lru_cache_init(1),
+            S1 = lru:lru_cache_put(S, 1, v1),
+            {ok, v1, S1Res} = lru:lru_cache_get(S1, 1),
+            ?assertEqual([1], S1Res#lru.keys),
+            S2 = lru:lru_cache_put(S1Res, 2, v2),
+            {ok, v2, S2Res} = lru:lru_cache_get(S2, 2),
+            ?assertEqual([2], S2Res#lru.keys)
+        end},
         {"when key not exists returns not_found status",
         fun() ->
             S = state(),
@@ -141,5 +151,24 @@ lru_cache_get_test_() ->
 
             {ok, _, S3_read2} = lru:lru_cache_get(S3_read, 2),
             ?assertEqual([2, 1, 3], S3_read2#lru.keys)
+        end},
+        {"get protects key from eviction",
+        fun() ->
+            S0 = lru:lru_cache_init(2),
+            S1 = lru:lru_cache_put(S0, 1, v1),
+            S2 = lru:lru_cache_put(S1, 2, v2),
+            {ok, _, S3} = lru:lru_cache_get(S2, 1),
+            S4 = lru:lru_cache_put(S3, 3, v3),
+            ?assertEqual([3, 1], S4#lru.keys)
+
+        end},
+        {"keys and values are consistant",
+        fun() ->
+            S = state_with_elements(),
+            {ok, _, S1} = lru:lru_cache_get(S, 3),
+            {ok, _, S2} = lru:lru_cache_get(S1, 4),
+            not_found = lru:lru_cache_get(S2, 88888),
+
+            ?assertEqual(lists:sort(S#lru.keys), lists:sort(S2#lru.keys))
         end}
     ].
