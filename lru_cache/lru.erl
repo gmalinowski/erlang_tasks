@@ -10,7 +10,9 @@ lru_cache_get(Cache, Key) ->
     Value = maps:get(Key, Cache#lru.values, not_found),
     case Value of
         not_found -> not_found;
-        _ -> {ok, Value, Cache}
+        _ -> 
+            KeysUpdated = [Key | lists:delete(Key, Cache#lru.keys)],
+            {ok, Value, Cache#lru{keys = KeysUpdated}}
     end.
 
 
