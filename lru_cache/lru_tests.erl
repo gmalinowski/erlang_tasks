@@ -99,12 +99,32 @@ lru_cache_put_test_() ->
             S1 = lru:lru_cache_put(S0, 2, 22),
             S2 = lru:lru_cache_put(S1, 3, 33),
 
-            ?assertEqual(length(S2#lru.keys), 1),
-            ?assertEqual(length(maps:keys(S2#lru.values)), 1),
+            ?assertEqual(1, length(S2#lru.keys)),
+            ?assertEqual(1, length(maps:keys(S2#lru.values))),
 
             ?assertEqual(33, maps:get(3, S2#lru.values, null)),
             ?assertEqual(null, maps:get(2, S2#lru.values, null))
-        end}
+        end},
+        {"do not allowe duplicate keys",
+        fun() ->
+            S0 = lru:lru_cache_init(3),
+            S1 = lru:lru_cache_put(S0, 8, v1),
+            ?assertEqual([8], S1#lru.keys),
+            S2 = lru:lru_cache_put(S1, 8, v2),
+            S3 = lru:lru_cache_put(S2, 8, v3),
+            ?assertEqual([8], S3#lru.keys)
+            
+        end},
+        {"do not allowe duplicate keys when lru is full",
+        fun() ->
+            S0 = lru:lru_cache_init(2),
+            S1 = lru:lru_cache_put(S0, 8, v1),
+            S2 = lru:lru_cache_put(S1, 7, v2),
+            ?assertEqual([7, 8], S2#lru.keys),
+            S3 = lru:lru_cache_put(S2, 7, v3),
+            ?assertEqual([7, 8], S3#lru.keys),
+            ?assertEqual(v3, maps:get(7, S3#lru.values))
+    end}
     ].
 
 lru_cache_get_test_() ->
